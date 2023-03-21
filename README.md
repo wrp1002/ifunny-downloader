@@ -8,8 +8,7 @@ download all liked posts from your ifunny account
 * Clone the repository
 * Install requirements: `pip3 install -r requirements.txt`
 * Login to your ifunny account in a browser. I used firefox and this script assumes you use firefox. You should be able to modify it to use other browsers if you want though by changing line 10 in the script
-* Open your browsers developer tools and go to the network tab. Navigate to `https://ifunny.co/account/smiles` 
-* Find the request in the list which should be near the bottom of `https://ifunny.co/api/v1/news?limit=10`. Click this request and copy the `x-csrf-token` from the request headers. Open the script and put this value in the headers near the top of the script. This value and `User-Agent` seemed to be the only ones that were required. You should only have to modify `x-csrf-token` though.
+* In your browser navigate to `https://ifunny.co/account/smiles` to make sure that cookies get set correctly
 * Run the script with `python3 download_likes.py`
 * Files will be saved to the output directory
 
