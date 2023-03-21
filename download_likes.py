@@ -25,7 +25,7 @@ headers = {
     "Sec-Fetch-Site": "same-origin",
     "TE": "trailers",
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0", #!
-    "x-csrf-token": "8a8473c4934650edfbefd2d2dc61db8c", #!
+    "x-csrf-token": "", ######################## Put yours here!!! 
     "x-requested-with": "fetch",
 }
 
