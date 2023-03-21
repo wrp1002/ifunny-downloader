@@ -17,7 +17,7 @@ for cookie in cookiejar:
         x_csrf_token = cookie.value
 
 if not x_csrf_token:
-    raise Exception("x_csrf_token cookie not found")
+    raise Exception("x-csrf-token cookie not found")
 
 headers = {
     "Accept": "application/json",
@@ -137,6 +137,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
