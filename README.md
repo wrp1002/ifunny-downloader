@@ -14,4 +14,4 @@ download all liked posts from your ifunny account
 
 ## Downloading new liked items
 
-Items that you have already downloaded are kept track of in urls.txt. Running the script again will skip over items in that file and only download newly found items. Files are kept in the order that you liked them with 1 being the oldest. You may have to update `x-csrf-token` in the future when the script is run again
+Items that you have already downloaded are kept track of in urls.txt. Running the script again will skip over items in that file and only download newly found items. Files are kept in the order that you liked them with 1 being the oldest.
