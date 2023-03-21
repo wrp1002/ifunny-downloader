@@ -10,6 +10,15 @@ output_dir = script_dir / "output"
 cookiejar = browser_cookie3.firefox(domain_name='ifunny.co')
 print(cookiejar)
 
+x_csrf_token = None
+
+for cookie in cookiejar:
+    if cookie.name == "x-csrf-token":
+        x_csrf_token = cookie.value
+
+if not x_csrf_token:
+    raise Exception("x_csrf_token cookie not found")
+
 headers = {
     "Accept": "application/json",
     "Accept-Encoding": "gzip, deflate, br",
@@ -25,7 +34,7 @@ headers = {
     "Sec-Fetch-Site": "same-origin",
     "TE": "trailers",
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0", #!
-    "x-csrf-token": "", ######################## Put yours here!!! 
+    "x-csrf-token": x_csrf_token, #!
     "x-requested-with": "fetch",
 }
 
@@ -104,17 +113,21 @@ def main():
         next_url = base_url + next_token
 
         for url in urls:
+            # Don't continue if we're starting to see duplicates
             if url in current_urls_set:
-                continue
+                next_token = None
+            else:
+                new_item_urls.append(url)
 
-            new_item_urls.append(url)
+
+    ### Download newly found items
 
     print(f"Found {len(new_item_urls)} new items")
 
     for new_url in reversed(new_item_urls):
-        print(f"Downloading {new_url}")
         url_filename = new_url.split("/")[-1]
         dst = output_dir / f"{next_id} {url_filename}"
+        print(f"Downloading {new_url} as {dst}")
         urlretrieve(new_url, dst)
 
         append_url_to_file("urls.txt", new_url)
@@ -124,25 +137,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
