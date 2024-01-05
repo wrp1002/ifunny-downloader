@@ -3,21 +3,26 @@ import requests
 from urllib.request import urlretrieve
 
 import os
+import webbrowser
 from pathlib import Path
 
 script_dir = Path(__file__).parent
 output_dir = script_dir / "output"
 cookiejar = browser_cookie3.firefox(domain_name='ifunny.co')
-print(cookiejar)
 
 x_csrf_token = None
 
+print("Cookies:")
 for cookie in cookiejar:
+    print(cookie)
     if cookie.name == "x-csrf-token":
         x_csrf_token = cookie.value
+print()
 
-if not x_csrf_token:
-    raise Exception("x-csrf-token cookie not found")
+while not x_csrf_token:
+    print("x-csrf-token cookie not found. login first")
+    webbrowser.open("https://ifunny.co/account/smiles")
+    input("Press enter to continue...")
 
 headers = {
     "Accept": "application/json",
@@ -53,20 +58,20 @@ def load_urls_from_file(filename):
 def get_items(url):
     urls = []
     res = requests.get(url, cookies=cookiejar, headers=headers)
-    print(res)
+    #print(res)
     #print(res.json())
 
     json_res = res.json()
-    next_token = json_res.get("pagination").get("next")
+    next_token = json_res.get("pagination", {}).get("next")
 
-    for item in json_res.get("items"):
+    for item in json_res.get("items", []):
         url = item.get("url")
         urls.append(url)
         print(url)
 
-    print(len(json_res.get("items")), "items")
+    print(len(json_res.get("items")), "items from this page")
     print(json_res.get("pagination"))
-    print("next:", next_token)
+    print("Next token:", next_token)
 
     return urls, next_token
 
@@ -122,7 +127,9 @@ def main():
 
     ### Download newly found items
 
-    print(f"Found {len(new_item_urls)} new items")
+    print(f"\nFound {len(new_item_urls)} new items")
+    if new_item_urls:
+        print("Downloading them now...")
 
     for new_url in reversed(new_item_urls):
         url_filename = new_url.split("/")[-1]
@@ -130,13 +137,34 @@ def main():
         print(f"Downloading {new_url} as {dst}")
         urlretrieve(new_url, dst)
 
-        append_url_to_file("urls.txt", new_url)
+        append_url_to_file(script_dir / "urls.txt", new_url)
         next_id += 1
+
+    print("Done!")
 
 
 
 if __name__ == "__main__":
+    pass
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
