@@ -8,40 +8,82 @@ from pathlib import Path
 
 script_dir = Path(__file__).parent
 output_dir = script_dir / "output"
-cookiejar = browser_cookie3.firefox(domain_name='ifunny.co')
 
-x_csrf_token = None
 
-print("Cookies:")
-for cookie in cookiejar:
-    print(cookie)
-    if cookie.name == "x-csrf-token":
-        x_csrf_token = cookie.value
-print()
+class iFunnyAPI:
+    def __init__(self):
+        self.cookies = self.get_cookies_from_browser()
+        self.x_csrf_token = self.get_csrf_from_cookies()
+        self.headers = {
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "content-type": "application/json",
+            "Host": "ifunny.co",
+            "Pragma": "no-cache",
+            "Referer": "https://ifunny.co/account/smiles",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "same-origin",
+            "Sec-Fetch-Site": "same-origin",
+            "TE": "trailers",
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0", #!
+            "x-csrf-token": self.x_csrf_token, #!
+            "x-requested-with": "fetch",
+        }
 
-while not x_csrf_token:
-    print("x-csrf-token cookie not found. login first")
-    webbrowser.open("https://ifunny.co/account/smiles")
-    input("Press enter to continue...")
+    def get_cookies_from_browser(self):
+        return browser_cookie3.firefox(domain_name='ifunny.co')
 
-headers = {
-    "Accept": "application/json",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "content-type": "application/json",
-    "Host": "ifunny.co",
-    "Pragma": "no-cache",
-    "Referer": "https://ifunny.co/account/smiles",
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "same-origin",
-    "Sec-Fetch-Site": "same-origin",
-    "TE": "trailers",
-    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0", #!
-    "x-csrf-token": x_csrf_token, #!
-    "x-requested-with": "fetch",
-}
+    def update_from_browser(self):
+        self.cookies = self.get_cookies_from_browser()
+        self.x_csrf_token = self.get_csrf_from_cookies()
+        self.headers["x-csrf-token"] = self.x_csrf_token
+
+    def session_valid(self):
+        res = requests.get("https://ifunny.co/account/smiles", cookies=self.cookies, headers=self.headers, allow_redirects=False)
+        print(f"Got status: {res.status_code}")
+        return res.status_code == 200
+
+    def get_csrf_from_cookies(self):
+        print("Getting x_csrf-token")
+        for cookie in self.cookies:
+            print(cookie)
+            if cookie.name == "x-csrf-token":
+                print("Found!")
+                return cookie.value
+        print("Not found")
+        return None
+
+    def wait_for_valid_session(self):
+        print("Checking for valid session...")
+        while not self.session_valid():
+            print("session not valid. try logging in first")
+            webbrowser.open("https://ifunny.co/account/smiles")
+            input("Press enter to continue...")
+            self.update_from_browser()
+        print("Looks good!")
+
+    def get_items(self, url):
+        urls = []
+        res = requests.get(url, cookies=self.cookies, headers=self.headers)
+        #print(res)
+        #print(res.json())
+
+        json_res = res.json()
+        next_token = json_res.get("pagination", {}).get("next")
+
+        for item in json_res.get("items", []):
+            url = item.get("url")
+            urls.append(url)
+            print(url)
+
+        print(len(json_res.get("items")), "items from this page")
+        print(json_res.get("pagination"))
+        print("Next token:", next_token)
+
+        return urls, next_token
 
 
 #https://ifunny.co/api/v1/account/smiles?next=1678975992.919
@@ -53,28 +95,6 @@ def load_urls_from_file(filename):
     except:
         print(f"File doesn't exist: {filename}")
         return []
-
-
-def get_items(url):
-    urls = []
-    res = requests.get(url, cookies=cookiejar, headers=headers)
-    #print(res)
-    #print(res.json())
-
-    json_res = res.json()
-    next_token = json_res.get("pagination", {}).get("next")
-
-    for item in json_res.get("items", []):
-        url = item.get("url")
-        urls.append(url)
-        print(url)
-
-    print(len(json_res.get("items")), "items from this page")
-    print(json_res.get("pagination"))
-    print("Next token:", next_token)
-
-    return urls, next_token
-
 
 def write_urls_to_file(filename, urls):
     with open(filename, 'w') as file:
@@ -99,6 +119,10 @@ def append_url_to_file(filename, url):
 
 
 def main():
+    ifunny = iFunnyAPI()
+    ifunny.wait_for_valid_session()
+    print()
+
     current_urls_set = set(load_urls_from_file(script_dir / "urls.txt"))
     next_id = len(current_urls_set) + 1
 
@@ -114,7 +138,7 @@ def main():
     next_url = base_url
 
     while next_token:
-        urls, next_token = get_items(next_url)
+        urls, next_token = ifunny.get_items(next_url)
         next_url = base_url + next_token
 
         for url in urls:
