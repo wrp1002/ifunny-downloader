@@ -72,14 +72,14 @@ class iFunnyAPI:
         #print(res.json())
 
         json_res = res.json()
-        next_token = json_res.get("pagination", {}).get("next")
+        next_token = json_res.get("pagination", {}).get("next", "")
 
         for item in json_res.get("items", []):
             url = item.get("url")
             urls.append(url)
             print(url)
 
-        print(len(json_res.get("items")), "items from this page")
+        print(len(json_res.get("items", [])), "items from this page")
         print(json_res.get("pagination"))
         print("Next token:", next_token)
 
